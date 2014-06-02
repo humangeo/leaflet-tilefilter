@@ -35,4 +35,4 @@ http://humangeo.github.io/leaflet-tilefilter/demo.html
 
 ## Details
 
-Read the docs.
+Read the [docs](https://github.com/humangeo/leaflet-tilefilter/wiki).
