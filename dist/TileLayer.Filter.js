@@ -528,6 +528,56 @@ L.ImageFilters.Presets = {
                 adjustments: [ 30, 0, 0 ]
             }).render();
         },
+        HueRotate60: function(imageData) {
+            return new L.CanvasChannelFilters.HSLAdjust(imageData, {
+                adjustments: [ 60, 0, 0 ]
+            }).render();
+        },
+        HueRotate90: function(imageData) {
+            return new L.CanvasChannelFilters.HSLAdjust(imageData, {
+                adjustments: [ 90, 0, 0 ]
+            }).render();
+        },
+        HueRotate120: function(imageData) {
+            return new L.CanvasChannelFilters.HSLAdjust(imageData, {
+                adjustments: [ 120, 0, 0 ]
+            }).render();
+        },
+        HueRotate150: function(imageData) {
+            return new L.CanvasChannelFilters.HSLAdjust(imageData, {
+                adjustments: [ 150, 0, 0 ]
+            }).render();
+        },
+        HueRotate180: function(imageData) {
+            return new L.CanvasChannelFilters.HSLAdjust(imageData, {
+                adjustments: [ 180, 0, 0 ]
+            }).render();
+        },
+        HueRotate210: function(imageData) {
+            return new L.CanvasChannelFilters.HSLAdjust(imageData, {
+                adjustments: [ 210, 0, 0 ]
+            }).render();
+        },
+        HueRotate240: function(imageData) {
+            return new L.CanvasChannelFilters.HSLAdjust(imageData, {
+                adjustments: [ 240, 0, 0 ]
+            }).render();
+        },
+        HueRotate270: function(imageData) {
+            return new L.CanvasChannelFilters.HSLAdjust(imageData, {
+                adjustments: [ 270, 0, 0 ]
+            }).render();
+        },
+        HueRotate300: function(imageData) {
+            return new L.CanvasChannelFilters.HSLAdjust(imageData, {
+                adjustments: [ 300, 0, 0 ]
+            }).render();
+        },
+        HueRotate330: function(imageData) {
+            return new L.CanvasChannelFilters.HSLAdjust(imageData, {
+                adjustments: [ 330, 0, 0 ]
+            }).render();
+        },
         Sepia1: function(imageData) {
             return new L.CanvasChannelFilters.Sepia(imageData).render();
         },
