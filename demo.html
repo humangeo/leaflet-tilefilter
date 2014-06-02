@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Tile Filters Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Leaflet Tile Filter Demo">
+    <meta name="author" content="Scott Fairgrieve, HumanGeo">
+    <style>
+      body {
+        padding: 0px;
+        margin: 0px;
+        font-family: Verdana, Tahoma, Arial, Sans Serif;
+      }
+      
+      *, *:before, *:after {
+	   -moz-box-sizing: border-box; 
+	   -webkit-box-sizing: border-box; 
+	   box-sizing: border-box;
+	  }
+      
+      h5 {
+      	padding: 10px 0px 10px 10px;
+      	margin: 0px;
+      	border-bottom: solid 1px #c0c0c0;
+      	background-color: #e0e0e0;
+      }
+      
+      #options {
+      	position: absolute;
+      	bottom: 10px;
+      	right: 10px;
+      	background-color: rgba(255, 255, 255, 0.7);
+      	border: solid 1px #c0c0c0;
+      }
+      
+      #layers {
+      	width: 500px;
+      	height: 500px;
+      	overflow: auto;
+      }
+      
+      #filters div {
+      	display: inline-block;
+      	margin: 10px;
+      	padding: 10px 100px 10px 10px;
+      	border-radius: 10px;
+      	background-color: #e0e0e0;
+      }
+      
+      div.wrapper {
+      	display: inline-block;
+      	margin: 10px 0px 0px 10px;
+      }
+      
+      div.wrapper.selected {
+      
+      }
+      
+      div.layer {
+      	width: 200px;
+      	height: 200px;
+      	background-size: cover;
+      	position: relative;
+      }
+      
+      div.layer .details {
+      	background-color: rgba(255, 255, 255, 0.7);
+      	position: absolute;
+      	bottom: 0px;
+      	width: 100%;
+      	padding: 10px;
+      }
+      
+      div.wrapper.selected div.layer .details {
+      	background-color: rgba(40, 40, 240, 0.9);
+      	color: #fff;
+      }
+    </style>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" type="text/css" media="screen" />
+</head>
+
+<body>
+
+	<div id="map"></div>
+	<div id="options">
+		<h5>Layers</h5>
+		<div id="layers"></div>
+		<h5>Filters</h5>
+		<div id="filters">
+			<div>
+				<h5>Canvas Filter</h5>
+				<select id="canvas-filters"></select>
+			</div>
+			<div>
+				<h5>CSS Filter</h5>
+				<select id="css-filters"></select>
+			</div>
+		</div>
+	</div>
+	<script type="text/template" id="layer-template">
+		<div class="layer" style="background-image: url(<%= thumbnail %>);">
+			<div class="details">
+				<span class="provider"><%= provider %></span>
+				<span class="style"><%= style %></span>
+			</div>
+		</div>
+	</script>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+	<script type="text/javascript" src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+	<script type="text/javascript" src="dist/TileLayer.Filter.js"></script>
+	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>
+	<script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.2.4"></script>
+	<script type="text/javascript">
+
+$(document).ready(function() {
+	var map;
+	var legendControl;
+
+	// Function for resizing the map to fill the available space on the screen
+	var resize = function () {
+		var $map = $('#map');
+		
+		$map.height($(window).height());
+		
+		if (map) {
+			map.invalidateSize();
+		}
+	};
+	
+	// Resize the map element on window resize
+	$(window).on('resize', function () {
+		resize();
+	});
+	
+	// Resize the map element
+	resize();
+	
+	// Initialize the map
+	map = L.map('map').setView([38.895843, -77.043085], 15);
+	
+	// Build menu choices
+	// Stamen, MapQuest, OSM
+	var layerChoices = {
+		Stamen: {
+			Toner: {
+				thumbnail: 'http://tile.stamen.com/toner/12/655/1583.jpg',
+				getLayer: function () {
+					return new L.StamenTileLayer('toner');
+				}
+			},
+			Terrain: {
+				thumbnail: 'http://tile.stamen.com/terrain/12/655/1583.jpg',
+				getLayer: function () {
+					return new L.StamenTileLayer('terrain');
+				}
+			},
+			Watercolor: {
+				thumbnail: 'http://tile.stamen.com/watercolor/12/655/1583.jpg',
+				getLayer: function () {
+					return new L.StamenTileLayer('watercolor');
+				}
+			}
+		},
+		MapQuest: {
+			OSM: {
+				thumbnail: 'http://otile1.mqcdn.com/tiles/1.0.0/map/12/655/1583.jpg',
+				getLayer: function () {
+					return new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg');
+				},
+				selected: true
+			},
+			Aerial: {
+				thumbnail: 'http://otile1.mqcdn.com/tiles/1.0.0/sat/12/655/1583.jpg',
+				getLayer: function () {
+					return new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg');
+				}
+			}
+		},
+		OSM: {
+			Default: {
+				thumbnail: 'http://a.tile.openstreetmap.org/12/655/1583.png',
+				getLayer: function () {
+					return new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+				}
+			}
+		}
+	};
+	
+	// Store the currently selected filters
+	var selectedCSSFilter = L.ImageFilters.Presets.CSS.None;
+	var selectedChannelFilter = L.ImageFilters.Presets.CanvasChannel.None;
+	var selectedFilter = function () {
+		return new L.CombinedFilter(this, {
+			cssFilter: selectedCSSFilter,
+			channelFilter: selectedChannelFilter
+		}).render();
+	};
+	var $layers = $('#layers');
+	var $template = $('#layer-template');
+	var template = _.template($template.html());
+	
+	var baseLayer = new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
+		filter: selectedFilter
+	});
+	
+	// Iterate through the layer choices and create a way for users to select a tile provider
+	for (var provider in layerChoices) {
+		var layerChoice = layerChoices[provider];
+		
+		for (var style in layerChoice) {
+			var option = layerChoice[style];
+			var $layer = $('<div class="wrapper"></div>');
+			
+			$layer.html(template({
+				thumbnail: option.thumbnail,
+				provider: provider,
+				style: style
+			}));
+			
+			if (option.selected) {
+				$layer.addClass('selected');
+			}
+			
+			$layers.append($layer);
+			
+			var clickFunction = function (option) {
+				return function () {
+					var tempLayer = baseLayer;
+				
+					baseLayer = option.getLayer();
+				
+					if (selectedFilter) {
+						baseLayer.setFilter(selectedFilter);
+					}
+				
+					map.addLayer(baseLayer);
+				
+					map.removeLayer(tempLayer);
+					
+					$layers.find('.selected').removeClass('selected');
+					$(this).addClass('selected');
+				}
+			};
+			
+			$layer.on('click', clickFunction(option));
+		}
+	}
+	
+	// Setup filter options
+	var $canvasFilters = $('#canvas-filters');
+	var $cssFilters = $('#css-filters');
+	
+	for (var filterChoice in L.ImageFilters.Presets.CanvasChannel) {
+		$canvasFilters.append('<option value="' + filterChoice + '">' + filterChoice + '</option>');
+	}
+	
+	for (var filterChoice in L.ImageFilters.Presets.CSS) {
+		$cssFilters.append('<option value="' + filterChoice + '">' + filterChoice + '</option>');
+	}
+	
+	$canvasFilters.on('change', function (e) {
+		selectedChannelFilter = L.ImageFilters.Presets.CanvasChannel[$canvasFilters.val()];
+		selectedFilter = function () {
+			return new L.CombinedFilter(this, {
+				cssFilter: selectedCSSFilter,
+				channelFilter: selectedChannelFilter
+			}).render();
+		};
+		
+		baseLayer.setFilter(selectedFilter);
+	});
+	
+	$cssFilters.on('change', function (e) {
+		selectedCSSFilter = L.ImageFilters.Presets.CSS[$cssFilters.val()];
+		selectedFilter = function () {
+			return new L.CombinedFilter(this, {
+				cssFilter: selectedCSSFilter,
+				channelFilter: selectedChannelFilter
+			}).render();
+		};
+		
+		baseLayer.setFilter(selectedFilter);
+	});
+	
+	baseLayer.addTo(map);
+});
+	</script>
+</body>
+</html>
