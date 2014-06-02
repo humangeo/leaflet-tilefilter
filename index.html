@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Leaflet-tilefilter : Apply customizable image filters to Leaflet map tiles" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Leaflet-tilefilter</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/humangeo/leaflet-tilefilter">View on GitHub</a>
+
+          <h1 id="project_title">Leaflet-tilefilter</h1>
+          <h2 id="project_tagline">Apply customizable image filters to Leaflet map tiles</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/humangeo/leaflet-tilefilter/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/humangeo/leaflet-tilefilter/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="leaflettilelayerfilter" class="anchor" href="#leaflettilelayerfilter"><span class="octicon octicon-link"></span></a>Leaflet.TileLayer.Filter</h1>
+
+<p>Are you bored with the basic, free tile map services out there, or have you ever wanted to change their base offerings to fit in better with your app?<br>
+Do you want the appearance of custom map tiles without having to setup your own tile server?  Spice up your maps by adding customizable image filters to tile images.  Use one of the existing, free tile providers like MapQuest, OSM, Stamen, and others, then change up their default offerings by adjusting the colors/styling on the client end.
+This plugin extends L.TileLayer based classes, adding support for tile image filters.  It provides extensible canvas-based filter approaches as well as CSS3 image filters.  Canvas filters can be chained together and combined with one or more CSS3 image filters, allowing for many variations.
+It was originally inspired by <a href="https://github.com/Zverik">Ilya Zverev</a>'s <a href="https://github.com/Zverik/leaflet-grayscale/">Leaflet.TileLayer.Grayscale</a> plug-in, but modified to be more extensible, supporting more than just a grayscale tile filter.</p>
+
+<h2>
+<a name="basic-usage" class="anchor" href="#basic-usage"><span class="octicon octicon-link"></span></a>Basic Usage</h2>
+
+<div class="highlight highlight-javascript"><pre><span class="kd">var</span> <span class="nx">baseLayer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">L</span><span class="p">.</span><span class="nx">TileLayer</span><span class="p">(</span><span class="s1">'http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg'</span><span class="p">,</span> <span class="p">{</span>
+    <span class="nx">filter</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+        <span class="k">new</span> <span class="nx">L</span><span class="p">.</span><span class="nx">CSSFilter</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="p">{</span>
+            <span class="nx">filters</span><span class="o">:</span> <span class="p">[</span><span class="s1">'saturate(200%)'</span><span class="p">]</span>
+        <span class="p">}).</span><span class="nx">render</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="kd">var</span> <span class="nx">baseLayer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">L</span><span class="p">.</span><span class="nx">StamenTileLayer</span><span class="p">(</span><span class="s1">'toner'</span><span class="p">);</span>
+
+<span class="nx">baseLayer</span><span class="p">.</span><span class="nx">setFilter</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+    <span class="k">new</span> <span class="nx">L</span><span class="p">.</span><span class="nx">CanvasFilter</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="p">{</span>
+        <span class="nx">channelFilter</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">imageData</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> <span class="nx">L</span><span class="p">.</span><span class="nx">CanvasChannelFilters</span><span class="p">.</span><span class="nx">Colorize</span><span class="p">(</span><span class="nx">imageData</span><span class="p">,</span> <span class="p">{</span>
+                <span class="nx">values</span><span class="o">:</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
+            <span class="p">}).</span><span class="nx">render</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}).</span><span class="nx">render</span><span class="p">();</span>
+<span class="p">});</span>
+</pre></div>
+
+<h2>
+<a name="demo" class="anchor" href="#demo"><span class="octicon octicon-link"></span></a>Demo</h2>
+
+<p><a href="http://humangeo.github.io/leaflet-tilefilter/demo.html">http://humangeo.github.io/leaflet-tilefilter/demo.html</a></p>
+
+<h2>
+<a name="details" class="anchor" href="#details"><span class="octicon octicon-link"></span></a>Details</h2>
+
+<p>Read the docs.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Leaflet-tilefilter maintained by <a href="https://github.com/humangeo">humangeo</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-51577600-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
