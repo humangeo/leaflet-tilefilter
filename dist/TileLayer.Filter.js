@@ -382,12 +382,9 @@ L.CanvasChannelFilters.HSLAdjust = L.CanvasChannelFilter.extend({
     updateChannels: function(channels) {
         channels = L.CanvasChannelFilter.prototype.updateChannels.call(this, channels);
         var color = new L.RGBColor([ channels[0], channels[1], channels[2], channels[3] ]);
-        color.h((color.h() * 360 + this.options.adjustments[0]) / 360);
-        color.s(color.s() + this.options.adjustments[1]);
-        color.l(color.l() + this.options.adjustments[2]);
-        for (var i = 0; i < 3; ++i) {
-            channels[i] = color._rgb[i];
-        }
+        color.setHSL((color._hsl[0] * 360 + this.options.adjustments[0]) / 360, color._hsl[1] + this.options.adjustments[1], color._hsl[2] + this.options.adjustments[2]);
+        channels = color._rgb.slice(0);
+        channels.push(channels[3]);
         if (this.options.adjustments.length > 3) {
             channels[3] += this.options.adjustments[3];
         }
@@ -417,7 +414,7 @@ L.CanvasChannelFilters.Colorize = L.CanvasChannelFilter.extend({
 
 L.CSSFilter = L.ImageFilter.extend({
     statics: {
-        prefixes: [ "", "-webkit-", "-moz-", "-ms-" ]
+        prefixes: [ "-webkit-", "-moz-", "-ms-", "-o-", "" ]
     },
     render: function() {
         for (var i = 0; i < L.CSSFilter.prefixes.length; ++i) {
