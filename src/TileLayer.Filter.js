@@ -564,8 +564,9 @@ L.CanvasChannelFilters.HSLAdjust = L.CanvasChannelFilter.extend({
       	
 		color.setHSL(((color._hsl[0] * 360 + this.options.adjustments[0]) / 360),(color._hsl[1] + this.options.adjustments[1]),(color._hsl[2] + this.options.adjustments[2]));
 
-        channels = color._rgb.slice(0);
-        channels.push(channels[3]);
+		for (var i = 0; i < 3; ++i) {
+			channels[i] = color._rgb[i];
+		}
 
 		if (this.options.adjustments.length > 3) {
 			channels[3] += this.options.adjustments[3];
