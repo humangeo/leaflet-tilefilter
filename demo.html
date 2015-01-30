@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Leaflet Tile Filter Demo">
     <meta name="author" content="Scott Fairgrieve, HumanGeo">
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" type="text/css" media="screen" />
     <style>
       body {
         padding: 0px;
@@ -78,7 +79,6 @@
       	color: #fff;
       }
     </style>
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" type="text/css" media="screen" />
 </head>
 
 <body>
@@ -119,7 +119,7 @@
 	</script>
 	<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
-	<script type="text/javascript" src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+	<script type="text/javascript" src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
 	<script type="text/javascript" src="dist/TileLayer.Filter.js"></script>
 	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>
 	<script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.2.4"></script>
@@ -158,19 +158,25 @@ $(document).ready(function() {
 			Toner: {
 				thumbnail: 'http://tile.stamen.com/toner/12/655/1583.jpg',
 				getLayer: function () {
-					return new L.StamenTileLayer('toner');
+					return new L.StamenTileLayer('toner', {
+						detectRetina: true
+					});
 				}
 			},
 			Terrain: {
 				thumbnail: 'http://tile.stamen.com/terrain/12/655/1583.jpg',
 				getLayer: function () {
-					return new L.StamenTileLayer('terrain');
+					return new L.StamenTileLayer('terrain', {
+						detectRetina: true
+					});
 				}
 			},
 			Watercolor: {
 				thumbnail: 'http://tile.stamen.com/watercolor/12/655/1583.jpg',
 				getLayer: function () {
-					return new L.StamenTileLayer('watercolor');
+					return new L.StamenTileLayer('watercolor', {
+						detectRetina: true
+					});
 				}
 			}
 		},
@@ -178,14 +184,18 @@ $(document).ready(function() {
 			OSM: {
 				thumbnail: 'http://otile1.mqcdn.com/tiles/1.0.0/map/12/655/1583.jpg',
 				getLayer: function () {
-					return new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg');
+					return new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
+						detectRetina: true
+					});
 				},
 				selected: true
 			},
 			Aerial: {
 				thumbnail: 'http://otile1.mqcdn.com/tiles/1.0.0/sat/12/655/1583.jpg',
 				getLayer: function () {
-					return new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg');
+					return new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg', {
+						detectRetina: true
+					});
 				}
 			}
 		},
@@ -193,7 +203,9 @@ $(document).ready(function() {
 			Default: {
 				thumbnail: 'http://a.tile.openstreetmap.org/12/655/1583.png',
 				getLayer: function () {
-					return new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+					return new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+						detectRetina: true
+					});
 				}
 			}
 		}
@@ -213,7 +225,8 @@ $(document).ready(function() {
 	var template = _.template($template.html());
 	
 	var baseLayer = new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
-		filter: selectedFilter
+		filter: selectedFilter,
+		detectRetina: true
 	});
 	
 	// Iterate through the layer choices and create a way for users to select a tile provider
