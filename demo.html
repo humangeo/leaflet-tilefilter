@@ -208,6 +208,24 @@ $(document).ready(function() {
 					});
 				}
 			}
+		},
+		CartoDB: {
+			Positron: {
+				thumbnail: 'http://a.basemaps.cartocdn.com/light_all/12/655/1583.png',
+				getLayer: function () {
+					return new L.TileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
+						  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+					});
+				}
+			},
+			'Dark Matter': {
+				thumbnail: 'http://a.basemaps.cartocdn.com/dark_all/12/655/1583.png',
+				getLayer: function () {
+					return new L.TileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{
+						  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+					});
+				}
+			}
 		}
 	};
 	
