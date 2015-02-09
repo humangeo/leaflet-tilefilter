@@ -175,14 +175,17 @@ L.ImageFilter = L.Class.extend({
 });
 
 L.CanvasFilter = L.ImageFilter.extend({
+	getImageData: function (width, height) {
+		return this._image.canvasContext.createImageData(width, height);
+	},
     render: function() {
         var canvas;
         var m = L.Browser.retina ? 2 : 1;
-        var size = Math.min(this._image._layer.options.tileSize * m, 256);
+        this._size = Math.min(this._image._layer.options.tileSize * m, 256);
         
         if (!this._image.canvasContext) {
             canvas = document.createElement("canvas");
-            canvas.width = canvas.height = size;
+            canvas.width = canvas.height = this._size;
             this._image.canvasContext = canvas.getContext("2d");
         }
         var ctx = this._image.canvasContext;
@@ -191,7 +194,7 @@ L.CanvasFilter = L.ImageFilter.extend({
                 return imageData;
             };
             ctx.drawImage(this._image, 0, 0);
-            var imgd = ctx.getImageData(0, 0, size, size);
+            var imgd = ctx.getImageData(0, 0, this._size, this._size);
             imgd = filter.call(this._image, imgd);
             ctx.putImageData(imgd, 0, 0);
             this._image.onload = null;
@@ -207,6 +210,59 @@ L.CanvasFilter = L.ImageFilter.extend({
 });
 
 L.ChannelFilters = {};
+
+L.ConvolveFilter = L.Class.extend({
+	options: {
+        weights: [0,-1, 0,
+                  -1,5,-1,
+                  0,-1, 0],
+        opaque: false
+    },
+    initialize: function(imageData, options) {
+        this._imageData = imageData;
+        L.Util.setOptions(this, options);
+    },
+    render: function(ctx) {
+        var pixels = this._imageData.data;
+        var weights = this.options.weights;
+        var side = Math.round(Math.sqrt(weights.length));
+        var halfSide = Math.floor(side/2);
+        var alphaFac = this.options.opaque ? 1 : 0;
+        var sh = this._imageData.height;
+        var sw = this._imageData.width;
+        var w = sw;
+        var h = sh;
+        var output = ctx.createImageData(w, h);
+        var dst = output.data;
+        for (var y=0; y<h; y++) {
+          for (var x=0; x<w; x++) {
+            var sy = y;
+            var sx = x;
+            var dstOff = (y*w+x)*4;
+            var r=0, g=0, b=0, a=0;
+            for (var cy=0; cy<side; cy++) {
+              for (var cx=0; cx<side; cx++) {
+                var scy = Math.min(sh-1, Math.max(0, sy + cy - halfSide));
+                var scx = Math.min(sw-1, Math.max(0, sx + cx - halfSide));
+                var srcOff = (scy*sw+scx)*4;
+                var wt = weights[cy*side+cx];
+                r += pixels[srcOff] * wt;
+                g += pixels[srcOff+1] * wt;
+                b += pixels[srcOff+2] * wt;
+                a += pixels[srcOff+3] * wt;
+              }
+            }
+            dst[dstOff] = r;
+            dst[dstOff+1] = g;
+            dst[dstOff+2] = b;
+            dst[dstOff+3] = a + alphaFac*(255-a);
+          }
+        }
+
+        return output;
+        
+    }
+});
 
 L.AlphaChannelFilter = L.Class.extend({
     options: {
@@ -296,7 +352,7 @@ L.ChannelFilters.Threshold = L.ChannelFilters.Grayscale.extend({
         falseValues: [ 0, 0, 0, 255 ]
     },
     updateChannels: function(channels) {
-    	channels = L.ChannelFilters.Grayscale.updateChannels.call(this, channels);
+    	channels = L.ChannelFilters.Grayscale.prototype.updateChannels.call(this, channels);
         for (var i = 0; i < 4; ++i) {
             channels[i] = channels[i] >= this.options.thresholds[i] ? this.options.trueValues[i] : this.options.falseValues[i];
         }
@@ -411,6 +467,94 @@ L.ChannelFilters.Colorize = L.ChannelFilter.extend({
         channels[channelIndices[1]] = this.options.values[1];
         return channels;
     }
+});
+
+L.ChannelFilters.MatchAndTransform = L.ChannelFilter.extend({
+	options: {
+		match: function (color) {
+			return true;
+		},
+		matching: function (color) {
+			return color;
+		},
+		nomatching: function (color) {
+			return color; //e.g. color.s(0); will make everything that doesn't match gray
+		}
+	},
+	updateChannels: function(channels) {
+		var color = new L.RGBColor([ channels[0], channels[1], channels[2], channels[3] ]);
+
+		var isMatch = this.options.match.call(this, color);
+		
+		if (isMatch) {
+			if (this.options.matching) {
+				color = this.options.matching.call(this, color);
+			}
+		}
+		else {
+			if (this.options.nonmatching) {
+				color = this.options.nonmatching.call(this, color);
+			}
+		}
+        
+        for (var i = 0; i < 3; ++i) {
+            channels[i] = color._rgb[i];
+        }
+        
+        channels[3] = color._a * 255;
+        
+        color = null;
+        return channels;
+	}
+});
+
+L.ChannelFilters.ColorSwap = L.ChannelFilters.MatchAndTransform.extend({
+	options: {
+		input: {
+			h: [150, 200],
+			s: [0, 1],
+			l: [0, 1]
+		},
+		output: {
+			h: 0
+		},
+		match: function (color) {
+			var matches = false;
+			
+			for (var key in this.options.input) {
+				var range = this.options.input[key];
+				var value = color[key].call(color);
+				
+				if (key === 'h') {
+					value = value * 360;
+				}
+				
+				matches = (value >= range[0]) && (value <= range[1]);
+				
+				if (!matches) {
+					break;
+				}
+			}
+			
+			return matches;
+		},
+		matching: function (color) {
+			for (var key in this.options.output) {
+				var value = this.options.output[key];
+				
+				if (key === 'h') {
+					value = value/360;
+				}
+				
+				color[key].call(color, value);
+			}
+			
+			return color;
+		},
+		nonmatching: function (color) {
+			return color; //e.g. color.s(0); will make everything that doesn't match gray
+		}
+	}
 });
 
 L.CSSFilter = L.ImageFilter.extend({
@@ -530,6 +674,9 @@ L.ImageFilters.Presets = {
         Grayscale3: L.ImageFilters.GenerateChannelFilter([new L.ChannelFilters.Grayscale({
         	weights: [1, 2, 3]
         })]),
+        Luminance: L.ImageFilters.GenerateChannelFilter([new L.ChannelFilters.Grayscale({
+        	weights: [0.2126, 0.7152, 0.0722]
+        })]),
         HueRotate30: L.ImageFilters.GenerateChannelFilter([new L.ChannelFilters.HSLAdjust({
 			adjustments: [30, 0, 0]
 		})]),
@@ -576,6 +723,37 @@ L.ImageFilters.Presets = {
         ColorizeBlue: L.ImageFilters.GenerateChannelFilter([new L.ChannelFilters.Colorize({
 			channel: 2,
 			values: [0, 0]
+		})]),
+		Convolve: function () {
+			return new L.CanvasFilter(this, {
+				channelFilter: function (imageData) { 
+					return new L.ConvolveFilter(imageData, {}).render(this.canvasContext);
+				}
+			}).render();
+		},
+		Threshold: L.ImageFilters.GenerateChannelFilter([new L.ChannelFilters.Threshold()]),
+		SwapBlueRed: L.ImageFilters.GenerateChannelFilter([new L.ChannelFilters.ColorSwap({
+			input: {
+				h: [150, 200]
+			},
+			output: {
+				h: 270,
+				a: 0.5
+			},
+			nonmatching: function (color) {
+				color.s(0);
+				return color;
+			}
+		})]),
+		WhiteToNeonBlue: L.ImageFilters.GenerateChannelFilter([new L.ChannelFilters.ColorSwap({
+			input: {
+				l: [1, 1]
+			},
+			output: {
+				r: 0,
+				g: 255,
+				b: 255
+			}
 		})])
     }
 };
@@ -605,3 +783,58 @@ L.ImageFilterFunctions = {
 };
 
 L.TileLayer.include(L.ImageFilterFunctions);
+
+/**
+ * Displays TMS tile images using canvas rather than image elements.  This enables for faster filtering/display of tiles
+ */
+L.TileLayer.CanvasTMS = L.TileLayer.Canvas.extend({
+	options: {
+		tileSize: 256
+	},
+	initialize: function (url, options) {
+		L.TileLayer.prototype.initialize.call(this, url, options);
+	},
+	_tileOnLoad: function () {
+		this._layer.__tileOnLoad.call(this);
+	},
+	_loadTile: function (tile, tilePoint) {
+		tile._layer  = this;
+
+		this._adjustTilePoint(tilePoint);
+		
+		var ctx = tile.getContext('2d');
+		var img = new Image();
+		
+		img.crossOrigin = 'anonymous';
+		img.src = this.getTileUrl(tilePoint);
+
+		var scale = 1;
+		
+		if (L.Browser.retina && this.options.detectRetina) {
+			scale = 2;
+			tile.width = tile.height = tile._layer.options.tileSize * scale;
+			tile.style.width = tile.style.height = tile._layer.options.tileSize + 'px';
+		}
+		
+		var size = tile._layer.options.tileSize * scale;
+		
+		img.onload = function () {
+			ctx.drawImage(img, 0, 0, size, size);
+			
+            var imgd = ctx.getImageData(0, 0, size, size);
+            
+            var filter = tile._layer.options.filter || function (data) {
+            	return data;
+            };
+
+            imgd = filter.call(tile._layer, imgd);
+            ctx.putImageData(imgd, 0, 0);
+            
+
+            //if (tile._layer.options.canvasFilter) {
+            //    tile._layer.options.canvasFilter.call(this);
+            //}
+			tile._layer.tileDrawn(tile);
+		}
+	}
+});

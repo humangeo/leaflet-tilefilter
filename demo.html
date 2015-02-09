@@ -78,6 +78,10 @@
       	background-color: rgba(40, 40, 240, 0.9);
       	color: #fff;
       }
+      
+      #map {
+      	background: url(http://subtlepatterns.com/patterns/swirl_pattern.png);
+      }
     </style>
 </head>
 
@@ -120,7 +124,7 @@
 	<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
 	<script type="text/javascript" src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-	<script type="text/javascript" src="dist/TileLayer.Filter.js"></script>
+	<script type="text/javascript" src="src/TileLayer.Filter.js"></script>
 	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>
 	<script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.2.4"></script>
 	<script type="text/javascript">
@@ -214,7 +218,8 @@ $(document).ready(function() {
 				thumbnail: 'http://a.basemaps.cartocdn.com/light_all/12/655/1583.png',
 				getLayer: function () {
 					return new L.TileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
-						  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+						  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+						  detectRetina: true
 					});
 				}
 			},
@@ -222,7 +227,8 @@ $(document).ready(function() {
 				thumbnail: 'http://a.basemaps.cartocdn.com/dark_all/12/655/1583.png',
 				getLayer: function () {
 					return new L.TileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{
-						  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+						  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+						  detectRetina: true
 					});
 				}
 			}
