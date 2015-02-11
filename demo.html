@@ -125,14 +125,13 @@
 	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
 	<script type="text/javascript" src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
 	<script type="text/javascript" src="src/TileLayer.Filter.js"></script>
-	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>
-	<script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.2.4"></script>
 	<script type="text/javascript">
 
 $(document).ready(function() {
 	var map;
 	var legendControl;
-
+	var classFunc = L.TileLayer.CanvasTMS;
+	
 	// Function for resizing the map to fill the available space on the screen
 	var resize = function () {
 		var $map = $('#map');
@@ -154,31 +153,31 @@ $(document).ready(function() {
 	
 	// Initialize the map
 	map = L.map('map').setView([38.895843, -77.043085], 15);
-	
+
 	// Build menu choices
 	// Stamen, MapQuest, OSM
 	var layerChoices = {
 		Stamen: {
 			Toner: {
 				thumbnail: 'http://tile.stamen.com/toner/12/655/1583.jpg',
-				getLayer: function () {
-					return new L.StamenTileLayer('toner', {
+				getLayer: function (classFunction) {
+					return new classFunction('http://tile.stamen.com/toner/{z}/{x}/{y}.jpg', {
 						detectRetina: true
 					});
 				}
 			},
 			Terrain: {
 				thumbnail: 'http://tile.stamen.com/terrain/12/655/1583.jpg',
-				getLayer: function () {
-					return new L.StamenTileLayer('terrain', {
+				getLayer: function (classFunction) {
+					return new classFunction('http://tile.stamen.com/terrain/{z}/{x}/{y}.jpg', {
 						detectRetina: true
 					});
 				}
 			},
 			Watercolor: {
 				thumbnail: 'http://tile.stamen.com/watercolor/12/655/1583.jpg',
-				getLayer: function () {
-					return new L.StamenTileLayer('watercolor', {
+				getLayer: function (classFunction) {
+					return new classFunction('http://tile.stamen.com/watercolor/{z}/{x}/{y}.jpg', {
 						detectRetina: true
 					});
 				}
@@ -187,8 +186,8 @@ $(document).ready(function() {
 		MapQuest: {
 			OSM: {
 				thumbnail: 'http://otile1.mqcdn.com/tiles/1.0.0/map/12/655/1583.jpg',
-				getLayer: function () {
-					return new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
+				getLayer: function (classFunction) {
+					return new classFunction('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
 						detectRetina: true
 					});
 				},
@@ -196,8 +195,8 @@ $(document).ready(function() {
 			},
 			Aerial: {
 				thumbnail: 'http://otile1.mqcdn.com/tiles/1.0.0/sat/12/655/1583.jpg',
-				getLayer: function () {
-					return new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg', {
+				getLayer: function (classFunction) {
+					return new classFunction('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg', {
 						detectRetina: true
 					});
 				}
@@ -206,8 +205,8 @@ $(document).ready(function() {
 		OSM: {
 			Default: {
 				thumbnail: 'http://a.tile.openstreetmap.org/12/655/1583.png',
-				getLayer: function () {
-					return new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				getLayer: function (classFunction) {
+					return new classFunction('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 						detectRetina: true
 					});
 				}
@@ -216,8 +215,8 @@ $(document).ready(function() {
 		CartoDB: {
 			Positron: {
 				thumbnail: 'http://a.basemaps.cartocdn.com/light_all/12/655/1583.png',
-				getLayer: function () {
-					return new L.TileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
+				getLayer: function (classFunction) {
+					return new classFunction('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
 						  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
 						  detectRetina: true
 					});
@@ -225,8 +224,8 @@ $(document).ready(function() {
 			},
 			'Dark Matter': {
 				thumbnail: 'http://a.basemaps.cartocdn.com/dark_all/12/655/1583.png',
-				getLayer: function () {
-					return new L.TileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{
+				getLayer: function (classFunction) {
+					return new classFunction('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{
 						  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
 						  detectRetina: true
 					});
@@ -247,11 +246,34 @@ $(document).ready(function() {
 	var $layers = $('#layers');
 	var $template = $('#layer-template');
 	var template = _.template($template.html());
+
+	var baseLayer = layerChoices.MapQuest.OSM.getLayer(classFunc);
+	//baseLayer.setFilter(selectedFilter);
 	
-	var baseLayer = new L.TileLayer('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
-		filter: selectedFilter,
-		detectRetina: true
-	});
+		
+	var getFilter = function () {
+		//if (classFunc === L.TileLayer) {
+			//var canvasFilter = function () {
+			//	return new L.CanvasFilter({
+			//		channelFilter: selectedChannelFilter
+			//	}).render(this);
+			//}
+			
+			selectedFilter = function (image, ctx) {
+				return new L.CombinedFilter({
+					cssFilter: selectedCSSFilter,
+					canvasFilter: selectedChannelFilter
+				}).render(this, image, ctx);
+			};
+		//}
+		//else {
+		//	selectedFilter = selectedChannelFilter;
+		//}
+		
+		baseLayer.setFilter(selectedFilter);
+	};
+	
+	getFilter();
 	
 	// Iterate through the layer choices and create a way for users to select a tile provider
 	for (var provider in layerChoices) {
@@ -277,12 +299,15 @@ $(document).ready(function() {
 				return function () {
 					var tempLayer = baseLayer;
 				
-					baseLayer = option.getLayer();
-				
+					baseLayer = option.getLayer(classFunc);
+					
+					/*
 					if (selectedFilter) {
 						baseLayer.setFilter(selectedFilter);
 					}
-				
+					*/
+					getFilter();
+					
 					map.addLayer(baseLayer);
 				
 					map.removeLayer(tempLayer);
@@ -310,26 +335,45 @@ $(document).ready(function() {
 	
 	$canvasFilters.on('change', function (e) {
 		selectedChannelFilter = L.ImageFilters.Presets.CanvasChannel[$canvasFilters.val()];
-		selectedFilter = function () {
-			return new L.CombinedFilter(this, {
-				cssFilter: selectedCSSFilter,
-				canvasFilter: selectedChannelFilter
-			}).render();
-		};
 		
+		/*
+		if (classFunc === L.TileLayer) {
+			var canvasFilter = function () {
+				return new L.CanvasFilter({
+					channelFilter: L.ImageFilters.GenerateChannelFilter(filters)
+				}).render(this);
+			}
+			
+			selectedFilter = function () {
+				return new L.CombinedFilter({
+					cssFilter: selectedCSSFilter,
+					canvasFilter: selectedChannelFilter
+				}).render(this);
+			};
+		}
+		else {
+			selectedFilter = selectedChannelFilter;
+		}
+
 		baseLayer.setFilter(selectedFilter);
+		*/
+		getFilter();
 	});
 	
 	$cssFilters.on('change', function (e) {
 		selectedCSSFilter = L.ImageFilters.Presets.CSS[$cssFilters.val()];
+
+		/*
 		selectedFilter = function () {
-			return new L.CombinedFilter(this, {
+			return new L.CombinedFilter({
 				cssFilter: selectedCSSFilter,
 				canvasFilter: selectedChannelFilter
-			}).render();
+			}).render(this);
 		};
 		
 		baseLayer.setFilter(selectedFilter);
+		*/
+		getFilter();
 	});
 	
 	baseLayer.addTo(map);
