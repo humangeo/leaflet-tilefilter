@@ -1,11 +1,22 @@
 /*
- @preserve Leaflet Tile Filters, a JavaScript plugin for apply image filters to tile images
+ @preserve Leaflet Tile Filters, a JavaScript plugin for applying image filters to tile images
  (c) 2014, Scott Fairgrieve, HumanGeo
-*/
+*/;L.Browser.littleEndian = (function() {
+	var buffer = new ArrayBuffer(2);
+	new DataView(buffer).setInt16(0, 256, true);
+	return new Int16Array(buffer)[0] === 256;
+})();
+
 L.Color = L.Class.extend({
+    statics: {
+        ONE_SIXTH: 1/6,
+        ONE_THIRD: 1/3,
+        TWO_THIRDS: 2/3,
+        HALF: 1/2
+    },
     initialize: function(colorDef) {
         this._rgb = [ 0, 0, 0 ];
-        this._hsl = [ 0, 1, .5 ];
+        this._hsl = [ 0, 1, 0.5 ];
         this._a = 1;
         if (colorDef) {
             this.parseColorDef(colorDef);
@@ -13,14 +24,16 @@ L.Color = L.Class.extend({
     },
     parseColorDef: function(colorDef) {},
     rgbToHSL: function(r, g, b) {
-        r /= 255, g /= 255, b /= 255;
+        r /= 255;
+        g /= 255;
+        b /= 255;
         var max = Math.max(r, g, b), min = Math.min(r, g, b);
         var h, s, l = (max + min) / 2;
         if (max == min) {
             h = s = 0;
         } else {
             var d = max - min;
-            s = l > .5 ? d / (2 - max - min) : d / (max + min);
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
             switch (max) {
               case r:
                 h = (g - b) / d + (g < b ? 6 : 0);
@@ -38,24 +51,24 @@ L.Color = L.Class.extend({
         }
         return [ h, s, l ];
     },
+    hue2rgb: function (p, q, t) {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < L.Color.ONE_SIXTH) return p + (q - p) * 6 * t;
+        if (t < L.Color.HALF) return q;
+        if (t < L.Color.TWO_THIRDS) return p + (q - p) * (L.Color.TWO_THIRDS - t) * 6;
+        return p;
+    },
     hslToRGB: function(h, s, l) {
         var r, g, b;
-        if (s == 0) {
+        if (s === 0) {
             r = g = b = l;
         } else {
-            function hue2rgb(p, q, t) {
-                if (t < 0) t += 1;
-                if (t > 1) t -= 1;
-                if (t < 1 / 6) return p + (q - p) * 6 * t;
-                if (t < 1 / 2) return q;
-                if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-                return p;
-            }
-            var q = l < .5 ? l * (1 + s) : l + s - l * s;
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
             var p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1 / 3);
-            g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1 / 3);
+            r = this.hue2rgb(p, q, h + L.Color.ONE_THIRD);
+            g = this.hue2rgb(p, q, h);
+            b = this.hue2rgb(p, q, h - L.Color.ONE_THIRD);
         }
         return [ Math.floor(r * 255), Math.floor(g * 255), Math.floor(b * 255) ];
     },
@@ -97,6 +110,18 @@ L.Color = L.Class.extend({
         }
         return rgbString;
     },
+    toInt: function () {
+    	var value;
+    	
+    	if (L.Browser.littleEndian) {
+    		value = (this._a << 24) | (this._rgb[2] << 16) | (this._rgb[1] << 8) | (this._rgb[0]);
+    	}
+    	else {
+    		value = (this._rgb[0] << 24) | (this._rgb[1] << 16) | (this._rgb[2] << 8) | (this._a);
+    	}
+    	
+    	return value;
+    },
     r: function(newR) {
         if (!arguments.length) return this._rgb[0];
         return this.setRGB(newR, this._rgb[1], this._rgb[2]);
@@ -128,16 +153,156 @@ L.Color = L.Class.extend({
     }
 });
 
+L.Color32 = L.Class.extend({
+    statics: {
+        ONE_SIXTH: 1/6,
+        ONE_THIRD: 1/3,
+        TWO_THIRDS: 2/3,
+        HALF: 1/2
+    },
+	initialize: function (color) {
+		if (L.Browser.littleEndian) {
+	    	this._r = (color >> 0) & 0xff;
+	    	this._g = (color >> 8) & 0xff;
+	    	this._b = (color >> 16) & 0xff;
+	    	this._a = (color >> 24) & 0xff;
+		}
+		else {
+			this._r = (color >> 24) & 0xff;
+			this._g = (color >> 16) & 0xff;
+			this._b = (color >> 8) & 0xff;
+			this._a = (color >> 0) & 0xff;
+		}
+        this.rgb2hsl();
+	},
+	r: function (r) {
+		if (!arguments.length) return this._r;
+		this._r = Math.min(r, 255);
+        this.rgb2hsl();
+        return this;
+	},
+	g: function (g) {
+		if (!arguments.length) return this._g;
+		this._g = Math.min(g, 255);
+        this.rgb2hsl();
+        return this;
+	},
+	b: function (b) {
+		if (!arguments.length) return this._b;
+		this._b = Math.min(b, 255);
+        this.rgb2hsl();
+        return this;
+	},
+	a: function (a) {
+		if (!arguments.length) return this._a;
+		this._a = Math.min(a, 255);
+        return this;
+	},
+    h: function(newH) {
+        if (!arguments.length) return this._h;
+        this._h = newH;
+        this.hsl2rgb();
+        return this;
+    },
+    s: function(newS) {
+        if (!arguments.length) return this._s;
+        this._s = newS;
+        this.hsl2rgb();
+        return this;
+    },
+    l: function(newL) {
+        if (!arguments.length) return this._l;
+        this._l = newL;
+        this.hsl2rgb();
+        return this;
+    },
+    hue2rgb: function (p, q, t) {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < L.Color32.ONE_SIXTH) return p + (q - p) * 6 * t;
+        if (t < L.Color32.HALF) return q;
+        if (t < L.Color32.TWO_THIRDS) return p + (q - p) * (L.Color32.TWO_THIRDS - t) * 6;
+        return p;
+    },
+    rgb2hsl: function () {
+        var r = this._r,
+            g = this._g,
+            b = this._b;
+
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        var max = Math.max(r, g, b), min = Math.min(r, g, b);
+        var h, s, l = (max + min) / 2;
+        if (max === min) {
+            h = s = 0;
+        } else {
+            var d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r:
+                    h = (g - b) / d + (g < b ? 6 : 0);
+                    break;
+
+                case g:
+                    h = (b - r) / d + 2;
+                    break;
+
+                case b:
+                    h = (r - g) / d + 4;
+                    break;
+            }
+            h /= 6;
+        }
+        this._h = h;
+        this._s = s;
+        this._l = l;
+    },
+    hsl2rgb: function () {
+        var r, g, b;
+        if (this._s === 0) {
+            r = g = b = this._l;
+        } else {
+            var q = this._l < 0.5 ? this._l * (1 + this._s) : this._l + this._s - this._l * this._s;
+            var p = 2 * this._l - q;
+            r = this.hue2rgb(p, q, this._h + L.Color32.ONE_THIRD);
+            g = this.hue2rgb(p, q, this._h);
+            b = this.hue2rgb(p, q, this._h - L.Color32.ONE_THIRD);
+        }
+        this._r = Math.floor(r * 255);
+        this._g = Math.floor(g * 255);
+        this._b = Math.floor(b * 255);
+    },
+	toInt: function () {
+    	var value;
+    	
+    	if (L.Browser.littleEndian) {
+    		value = (this._a << 24) | (this._b << 16) | (this._g << 8) | (this._r);
+    	}
+    	else {
+    		value = (this._r << 24) | (this._g << 16) | (this._b << 8) | (this._a);
+    	}
+    	
+    	return value;
+    },
+    toColor: function () {
+    	return new L.RGBColor([this._r, this._g, this._b, this._a]);
+    }
+});
+
 L.RGBColor = L.Color.extend({
     initialize: function(colorDef) {
         L.Color.prototype.initialize.call(this, colorDef);
     },
     parseColorDef: function(colorDef) {
+    	var isInt = typeof(colorDef) === 'number';
         var isArray = colorDef instanceof Array;
-        var isHex = colorDef.indexOf("#") === 0;
+        var isHex = !isInt && !isArray ? colorDef.indexOf("#") === 0 : false;
         var parts = [];
         var r, g, b, a;
-        if (isArray) {
+        if (isInt) {
+        	
+        } else if (isArray) {
             r = Math.floor(colorDef[0]);
             g = Math.floor(colorDef[1]);
             b = Math.floor(colorDef[2]);
@@ -279,17 +444,31 @@ L.AlphaChannelFilter = L.Class.extend({
     setOpacity: function(opacity) {
         this.options.opacity = opacity;
     },
-    updateChannels: function(channels) {
+    updateChannels: function (channels) {
         channels[3] = this.options.opacity;
         return channels;
     },
-    render: function(imageData) {
+    updatePixel: function (pixel) {
+    	var color = new L.Color32(pixel);
+    	
+    	color.a(this.options.opacity);
+    	
+    	return color.toInt();
+    },
+    render2: function(imageData) {
         var pixels = imageData.data;
         for (var i = 0, n = pixels.length; i < n; i += 4) {
-            var channels = this.updateChannels([ pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3] ]);
+            var channels = this.updateChannels([pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]]);
             for (var j = 0; j < 4; ++j) {
                 pixels[i + j] = channels[j];
             }
+        }
+        return imageData;
+    },
+    render: function (imageData) {
+    	var pixels = new Uint32Array(imageData.data.buffer);
+        for (var i = 0, n = pixels.length; i < n; ++i) {
+            pixels[i] = this.updatePixel(pixels[i]);
         }
         return imageData;
     }
@@ -314,16 +493,28 @@ L.CanvasChannelFilter = L.AlphaChannelFilter.extend({
             channels = filters[i].updateChannels(channels);
         }
         return channels;
+    },
+    updatePixel: function (pixel) {
+    	var filters = this.options.filters;
+        for (var i = 0; i < filters.length; ++i) {
+            pixel = filters[i].updatePixel(pixel);
+        }
+        return pixel;
     }
 });
 
 L.ChannelFilter = L.Class.extend({
 	initialize: function (options) {
 		L.Util.setOptions(this, options);
+        this._keys = ['r', 'g', 'b', 'a'];
 	},
 	
 	updateChannels: function (channels) {
 		return channels;
+	},
+	
+	updatePixel: function (pixel) {
+		return pixel;
 	}
 });
 
@@ -332,6 +523,7 @@ L.ChannelFilters.Grayscale = L.ChannelFilter.extend({
         channelWeights: [ 3, 4, 1 ]
     },
     initialize: function(options) {
+        L.ChannelFilter.prototype.initialize.call(this, options);
         this.sumWeights();
     },
     sumWeights: function() {
@@ -345,6 +537,15 @@ L.ChannelFilters.Grayscale = L.ChannelFilter.extend({
         var channelWeights = this.options.channelWeights;
         channels[0] = channels[1] = channels[2] = (channelWeights[0] * channels[0] + channelWeights[1] * channels[1] + channelWeights[2] * channels[2]) / this._summedWeight;
         return channels;
+    },
+    updatePixel: function (pixel) {
+    	var color = new L.Color32(pixel);
+    	var channelWeights = this.options.channelWeights;
+    	var avg = (channelWeights[0] * color.r() + channelWeights[1] * color.g() + channelWeights[2] * color.b()) / this._summedWeight;
+    	
+    	color.r(avg).g(avg).b(avg);
+
+        return color.toInt();
     }
 });
 
@@ -361,6 +562,15 @@ L.ChannelFilters.Threshold = L.ChannelFilters.Grayscale.extend({
             channels[i] = channels[i] >= this.options.thresholds[i] ? this.options.trueValues[i] : this.options.falseValues[i];
         }
         return channels;
+    },
+    updatePixel: function (pixel) {
+    	var color = new L.Color32(pixel);
+
+        for (var i = 0; i < this._keys.length; ++i) {
+            color[this._keys[i]](color[this._keys[i]]() >= this.options.thresholds[i] ? this.options.trueValues[i] : this.options.falseValues[i]);
+        }
+
+    	return color.toInt();
     }
 });
 
@@ -372,6 +582,7 @@ L.ChannelFilters.Contrast = L.ChannelFilter.extend({
         }
     },
     initialize: function(imageData, options) {
+        L.ChannelFilter.prototype.initialize.call(this, options);
         this._factor = this.options.factor.call(this, this.options.contrast);
     },
     updateChannels: function(channels) {
@@ -379,6 +590,15 @@ L.ChannelFilters.Contrast = L.ChannelFilter.extend({
             channels[i] = this._factor * (channels[i] - 128) + 128;
         }
         return channels;
+    },
+    updatePixel: function (pixel) {
+    	var color = new L.Color32(pixel);
+
+        for (var i = 0; i < 3; ++i) {
+            color[this._keys[i]](this._factor * (color[this._keys[i]]() - 128) + 128);
+        }
+    	
+    	return color.toInt();
     }
 });
 
@@ -388,6 +608,15 @@ L.ChannelFilters.Invert = L.ChannelFilter.extend({
             channels[i] = 255 - channels[i];
         }
         return channels;
+    },
+    updatePixel: function (pixel) {
+    	var color = new L.Color32(pixel);
+
+        for (var i = 0; i < 3; ++i) {
+            color[this._keys[i]](255 - color[this._keys[i]]());
+        }
+
+    	return color.toInt();
     }
 });
 
@@ -400,12 +629,22 @@ L.ChannelFilters.ChannelSwap = L.ChannelFilter.extend({
         channels[this.options.positions[0]] = channels[this.options.positions[1]];
         channels[this.options.positions[1]] = tmp;
         return channels;
+    },
+    updatePixel: function (pixel) {
+        var color = new L.Color32(pixel);
+        var tmp = color[this._keys[this.options.positions[0]]]();
+        color[this._keys[this.options.positions[0]]](color[this._keys[this.options.positions[1]]]());
+        color[this._keys[this.options.positions[1]]](tmp);
+        return color.toInt();
     }
 });
 
 L.ChannelFilters.Matrix = L.ChannelFilter.extend({
     options: {
-        matrix: [ .393, .769, .189, .349, .686, .168, .272, .534, .131 ]
+        matrix: [ 0.393, 0.769, 0.189, 0.349, 0.686, 0.168, 0.272, 0.534, 0.131 ]
+    },
+    initialize: function () {
+        L.ChannelFilter.prototype.initialize.call(this, options);
     },
     updateChannels: function(channels) {
         var matrix = this.options.matrix;
@@ -416,12 +655,25 @@ L.ChannelFilters.Matrix = L.ChannelFilter.extend({
             channels[i] = r * matrix[3 * i] + g * matrix[3 * i + 1] + b * matrix[3 * i + 2];
         }
         return channels;
+    },
+    updatePixel: function (pixel) {
+        var matrix = this.options.matrix;
+        var color = new L.Color32(pixel);
+        var r = color.r();
+        var g = color.g();
+        var b = color.b();
+
+        for (var i = 0; i < 3; ++i) {
+            color[this._keys[i]](Math.floor(r * matrix[3 * i] + g * matrix[3 * i + 1] + b * matrix[3 * i + 2]));
+        }
+
+        return color.toInt();
     }
 });
 
 L.ChannelFilters.Sepia = L.ChannelFilters.Matrix.extend({
     options: {
-        matrix: [ .393, .769, .189, .349, .686, .168, .272, .534, .131 ]
+        matrix: [ 0.393, 0.769, 0.189, 0.349, 0.686, 0.168, 0.272, 0.534, 0.131 ]
     }
 });
 
@@ -434,6 +686,13 @@ L.ChannelFilters.Adjust = L.ChannelFilter.extend({
             channels[i] = Math.min(Math.max(channels[i] + this.options.adjustments[i], 0), 255);
         }
         return channels;
+    },
+    updatePixel: function (pixel) {
+        var color = new L.Color32(pixel);
+        for (var i = 0; i < this._keys.length; ++i) {
+            color[this._keys[i]](Math.min(Math.max(color[this._keys[i]]() + this.options.adjustments[i], 0), 255));
+        }
+        return color.toInt();
     }
 });
 
@@ -452,6 +711,19 @@ L.ChannelFilters.HSLAdjust = L.ChannelFilter.extend({
         }
         color = null;
         return channels;
+    },
+    updatePixel: function (pixel) {
+        var color = new L.Color32(pixel);
+
+        color.h((color.h() * 360 + this.options.adjustments[0]) / 360);
+        color.s(color.s() + this.options.adjustments[1]);
+        color.l(color.l() + this.options.adjustments[2]);
+
+        if (this.options.adjustments.length > 3) {
+            color.a(color.a() + this.options.adjustments[3]);
+        }
+
+        return color.toInt();
     }
 });
 
@@ -470,6 +742,16 @@ L.ChannelFilters.Colorize = L.ChannelFilter.extend({
         channels[channelIndices[0]] = this.options.values[0];
         channels[channelIndices[1]] = this.options.values[1];
         return channels;
+    },
+    updatePixel: function(pixel) {
+        var channelIndices = [ 0, 1, 2 ];
+        channelIndices.splice(this.options.channel, 1);
+        var color = new L.Color32(pixel);
+
+        color[this._keys[this.options.channel]]((color.r() + color.g() + color.b())/3);
+        color[this._keys[channelIndices[0]]](this.options.values[0]);
+        color[this._keys[channelIndices[1]]](this.options.values[1]);
+        return color.toInt();
     }
 });
 
@@ -509,7 +791,32 @@ L.ChannelFilters.MatchAndTransform = L.ChannelFilter.extend({
         
         color = null;
         return channels;
-	}
+	},
+    updatePixel: function (pixel) {
+        var color = new L.Color32(pixel);
+        var rgbColor = color.toColor();
+
+        var isMatch = this.options.match.call(this, rgbColor);
+
+        if (isMatch) {
+            if (this.options.matching) {
+                rgbColor = this.options.matching.call(this, rgbColor);
+            }
+        }
+        else {
+            if (this.options.nonmatching) {
+                rgbColor = this.options.nonmatching.call(this, rgbColor);
+            }
+        }
+
+        for (var i = 0; i < 3; ++i) {
+            color[this._keys[i]](rgbColor._rgb[i]);
+        }
+
+        color.a(rgbColor._a * 255);
+
+        return color.toInt();
+    }
 });
 
 L.ChannelFilters.ColorSwap = L.ChannelFilters.MatchAndTransform.extend({
@@ -581,14 +888,22 @@ L.CombinedFilter = L.ImageFilter.extend({
         this.options.cssFilter = filter;
         return this;
     },
-    render: function(element, image, ctx) {
-		if (this.options.canvasFilter) {
+    renderCanvas: function (element, image, ctx) {
+    	if (this.options.canvasFilter) {
     		this.options.canvasFilter.call(element, image, ctx);
     	}
-    	
-        if (this.options.cssFilter) {
+    	return this;
+    },
+    renderCSS: function (element, image, ctx) {
+    	if (this.options.cssFilter) {
             this.options.cssFilter.call(element, image, ctx);
         }
+    	return this;
+    },
+    render: function(element, image, ctx) {
+		this.renderCanvas(element, image, ctx);
+		this.renderCSS(element, image, ctx);
+		return this;
     }
 });
 
@@ -738,9 +1053,9 @@ L.ImageFilters.Presets = {
 			}).render(this, image, ctx);
 		},
 		Threshold: L.ImageFilters.GenerateCanvasFilter([new L.ChannelFilters.Threshold()]),
-		SwapBlueRed: L.ImageFilters.GenerateCanvasFilter([new L.ChannelFilters.ColorSwap({
+		WaterTransparent: L.ImageFilters.GenerateCanvasFilter([new L.ChannelFilters.ColorSwap({
 			input: {
-				h: [150, 200]
+				h: [150, 210]
 			},
 			output: {
 				h: 270,
@@ -769,7 +1084,13 @@ L.ImageFilterFunctions = {
     __tileOnLoad: L.TileLayer.prototype._tileOnLoad,
     setFilter: function(filter) {
         this.options.filter = filter;
-        return this.redraw();
+        for (var key in this._tiles) {
+            var xyParts = key.split(':');
+            var tilePoint = new L.Point(Number(xyParts[0]), Number(xyParts[1]));
+
+            this._loadTile(this._tiles[key], tilePoint);
+        }
+        return this;
     },
     clearFilter: function() {
         this.options.filter = null;
@@ -791,11 +1112,12 @@ L.ImageFilterFunctions = {
 L.TileLayer.include(L.ImageFilterFunctions);
 
 /**
- * Displays TMS tile images using canvas rather than image elements.  This enables faster filtering/display of tiles
+ * Displays TMS tile images using canvas rather than image elements
  */
 L.TileLayer.CanvasTMS = L.TileLayer.Canvas.extend({
 	options: {
-		tileSize: 256
+		tileSize: 256,
+        reuseTiles: true
 	},
 	initialize: function (url, options) {
 		L.TileLayer.prototype.initialize.call(this, url, options);
@@ -803,14 +1125,34 @@ L.TileLayer.CanvasTMS = L.TileLayer.Canvas.extend({
 	_tileOnLoad: function () {
 		this._layer.__tileOnLoad.call(this);
 	},
+    _applyFilter: function (tile, img, ctx) {
+        setTimeout(this._async(tile, img, ctx), 0);
+    },
+    _async: function (tile, img, ctx) {
+        return function () {
+            try {
+                var filter = tile._layer.options.filter || function (data) {
+                    return data;
+                };
+
+                img._layer = tile._layer;
+                filter.call(tile, img, ctx);
+            }
+            finally {
+                tile._layer.tileDrawn(tile);
+            }
+        };
+    },
 	_loadTile: function (tile, tilePoint) {
+        var me = this;
+
 		tile._layer  = this;
 
 		this._adjustTilePoint(tilePoint);
 		
 		var ctx = tile.getContext('2d');
 		var scale = 1;
-		
+
 		if (L.Browser.retina && this.options.detectRetina) {
 			scale = 2;
 			tile.width = tile.height = tile._layer.options.tileSize * scale;
@@ -818,29 +1160,19 @@ L.TileLayer.CanvasTMS = L.TileLayer.Canvas.extend({
 		}
 		
 		var size = tile._layer.options.tileSize * scale;
-		var img = new Image();
-		
-		img.onload = function () {
-			try {
-				//ctx.drawImage(img, 0, 0, size, size);
-				
-	            //var imgd = ctx.getImageData(0, 0, size, size);
-	            
-	            var filter = tile._layer.options.filter || function (data) {
-	            	return data;
-	            };
-	
-	            img._layer = tile._layer;
-	            filter.call(tile, img, ctx);
-	            //imgd = filter.call(tile._layer, imgd, ctx);
-	            //ctx.putImageData(imgd, 0, 0);
-			}
-			finally {
-				tile._layer.tileDrawn(tile);
-			}
-		}
+        if (!tile._img) {
+            var img = new Image();
 
-		img.crossOrigin = 'anonymous';
-		img.src = this.getTileUrl(tilePoint);
+            img.onload = function () {
+                tile._img = img;
+                me._applyFilter(tile, img, ctx);
+            };
+
+            img.crossOrigin = 'anonymous';
+            img.src = me.getTileUrl(tilePoint);
+        }
+        else {
+            me._applyFilter(tile, tile._img, ctx);
+        }
 	}
 });

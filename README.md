@@ -9,6 +9,14 @@ Do you want the appearance of custom map tiles without having to setup your own 
 This plugin extends L.TileLayer based classes, adding support for tile image filters.  It provides extensible canvas-based filter approaches as well as CSS3 image filters.  Canvas filters can be chained together and combined with one or more CSS3 image filters, allowing for many variations.
 It was originally inspired by [Ilya Zverev](https://github.com/Zverik)'s [Leaflet.TileLayer.Grayscale](https://github.com/Zverik/leaflet-grayscale/) plug-in, but modified to be more extensible, supporting more than just a grayscale tile filter.
 
+## Build
+
+```
+npm install
+bower install
+grunt
+```
+
 ## Basic Usage
 
 ```javascript

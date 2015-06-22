@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Leaflet Tile Filter Demo">
     <meta name="author" content="Scott Fairgrieve, HumanGeo">
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="bower_components/leaflet/dist/leaflet.css" type="text/css" media="screen" />
     <style>
       body {
         padding: 0px;
@@ -121,10 +121,10 @@
 	  ga('send', 'pageview');
 
 	</script>
-	<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
-	<script type="text/javascript" src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-	<script type="text/javascript" src="src/TileLayer.Filter.js"></script>
+	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+	<script type="text/javascript" src="bower_components/underscore/underscore-min.js"></script>
+	<script type="text/javascript" src="bower_components/leaflet/dist/leaflet.js"></script>
+	<script type="text/javascript" src="dist/leaflet-tilefilter.min.js"></script>
 	<script type="text/javascript">
 
 $(document).ready(function() {
@@ -248,28 +248,16 @@ $(document).ready(function() {
 	var template = _.template($template.html());
 
 	var baseLayer = layerChoices.MapQuest.OSM.getLayer(classFunc);
-	//baseLayer.setFilter(selectedFilter);
-	
-		
+
 	var getFilter = function () {
-		//if (classFunc === L.TileLayer) {
-			//var canvasFilter = function () {
-			//	return new L.CanvasFilter({
-			//		channelFilter: selectedChannelFilter
-			//	}).render(this);
-			//}
 			
-			selectedFilter = function (image, ctx) {
-				return new L.CombinedFilter({
-					cssFilter: selectedCSSFilter,
-					canvasFilter: selectedChannelFilter
-				}).render(this, image, ctx);
-			};
-		//}
-		//else {
-		//	selectedFilter = selectedChannelFilter;
-		//}
-		
+        selectedFilter = function (image, ctx) {
+            return new L.CombinedFilter({
+                cssFilter: selectedCSSFilter,
+                canvasFilter: selectedChannelFilter
+            }).render(this, image, ctx);
+        };
+
 		baseLayer.setFilter(selectedFilter);
 	};
 	
@@ -335,44 +323,13 @@ $(document).ready(function() {
 	
 	$canvasFilters.on('change', function (e) {
 		selectedChannelFilter = L.ImageFilters.Presets.CanvasChannel[$canvasFilters.val()];
-		
-		/*
-		if (classFunc === L.TileLayer) {
-			var canvasFilter = function () {
-				return new L.CanvasFilter({
-					channelFilter: L.ImageFilters.GenerateChannelFilter(filters)
-				}).render(this);
-			}
-			
-			selectedFilter = function () {
-				return new L.CombinedFilter({
-					cssFilter: selectedCSSFilter,
-					canvasFilter: selectedChannelFilter
-				}).render(this);
-			};
-		}
-		else {
-			selectedFilter = selectedChannelFilter;
-		}
 
-		baseLayer.setFilter(selectedFilter);
-		*/
 		getFilter();
 	});
 	
 	$cssFilters.on('change', function (e) {
 		selectedCSSFilter = L.ImageFilters.Presets.CSS[$cssFilters.val()];
 
-		/*
-		selectedFilter = function () {
-			return new L.CombinedFilter({
-				cssFilter: selectedCSSFilter,
-				canvasFilter: selectedChannelFilter
-			}).render(this);
-		};
-		
-		baseLayer.setFilter(selectedFilter);
-		*/
 		getFilter();
 	});
 	

@@ -1,0 +1,29 @@
+{
+  "name": "leaflet-tilefilter",
+  "version": "0.0.1",
+  "homepage": "https://github.com/humangeo/leaflet-tilefilter",
+  "description": "Allows you to apply image filters to Leaflet map tiles",
+  "main": "dist/TileLayer.Filter.min.js",
+  "keywords": [
+    "Leaflet",
+    "JavaScript",
+    "filter",
+    "tile"
+  ],
+  "authors": [
+    "Scott Fairgrieve"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "leaflet": "~0.7.3",
+    "underscore": "~1.8.3",
+    "jquery": "~2.1.4"
+  }
+}
