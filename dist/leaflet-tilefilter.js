@@ -435,8 +435,31 @@ L.ConvolveFilter = L.Class.extend({
 });
 
 L.AlphaChannelFilter = L.Class.extend({
+    statics: {
+        RENDER_MODE_CHANNELS: function(imageData) {
+            var pixels = imageData.data;
+            for (var i = 0, n = pixels.length; i < n; i += 4) {
+                var channels = this.updateChannels([pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]]);
+                for (var j = 0; j < 4; ++j) {
+                    pixels[i + j] = channels[j];
+                }
+            }
+            return imageData;
+        },
+        RENDER_MODE_PIXEL: function (imageData) {
+            var pixels = new Uint32Array(imageData.data.buffer);
+            for (var i = 0, n = pixels.length; i < n; ++i) {
+                pixels[i] = this.updatePixel(pixels[i]);
+            }
+            return imageData;
+        }
+    }
+});
+
+L.AlphaChannelFilter = L.AlphaChannelFilter.extend({
     options: {
-        opacity: 255
+        opacity: 255,
+        renderMode: L.AlphaChannelFilter.RENDER_MODE_PIXEL
     },
     initialize: function(options) {
         L.Util.setOptions(this, options);
@@ -455,22 +478,8 @@ L.AlphaChannelFilter = L.Class.extend({
     	
     	return color.toInt();
     },
-    render2: function(imageData) {
-        var pixels = imageData.data;
-        for (var i = 0, n = pixels.length; i < n; i += 4) {
-            var channels = this.updateChannels([pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]]);
-            for (var j = 0; j < 4; ++j) {
-                pixels[i + j] = channels[j];
-            }
-        }
-        return imageData;
-    },
     render: function (imageData) {
-    	var pixels = new Uint32Array(imageData.data.buffer);
-        for (var i = 0, n = pixels.length; i < n; ++i) {
-            pixels[i] = this.updatePixel(pixels[i]);
-        }
-        return imageData;
+        return this.options.renderMode.call(this, imageData);
     }
 });
 
