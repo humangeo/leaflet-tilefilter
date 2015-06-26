@@ -346,7 +346,7 @@ L.CanvasFilter = L.ImageFilter.extend({
     	// manipulate by applying filters
         var canvas;
         var m = L.Browser.retina ? 2 : 1;
-        var size = Math.min(image._layer.options.tileSize * m, 256);
+        var size = image._layer.options.tileSize * m; //Math.min(image._layer.options.tileSize * m, 256);
         var hasContext = true;
         
         if (!ctx) {//image.canvasContext) {
@@ -1167,8 +1167,7 @@ L.TileLayer.CanvasTMS = L.TileLayer.Canvas.extend({
 			tile.width = tile.height = tile._layer.options.tileSize * scale;
 			tile.style.width = tile.style.height = tile._layer.options.tileSize + 'px';
 		}
-		
-		var size = tile._layer.options.tileSize * scale;
+
         if (!tile._img) {
             var img = new Image();
 
