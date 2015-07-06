@@ -1,2 +1,5 @@
 .DS_Store
 .project
+.idea
+bower_components
+node_modules
