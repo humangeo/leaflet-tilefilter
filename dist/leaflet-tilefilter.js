@@ -1155,6 +1155,21 @@ L.TileLayer.CanvasTMS = L.TileLayer.extend({
             }
         };
     },
+    /*
+    removeTiles: function (tiles) {
+        for (var key in tiles) {
+            this._removeTile(key);
+        }
+    },
+    redraw: function () {
+        if (this._map) {
+            var oldTiles = L.extend({}, this._tiles);
+            this._update();
+            this.removeTiles(oldTiles);
+        }
+        return this;
+    },
+    */
     createTile: function (coords, done) {
         var tile = L.DomUtil.create('canvas', 'leaflet-tile');
         tile.width = tile.height = this.options.tileSize;
