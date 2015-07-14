@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Leaflet Tile Filter Demo">
     <meta name="author" content="Scott Fairgrieve, HumanGeo">
-    <link rel="stylesheet" href="bower_components/leaflet/dist/leaflet.css" type="text/css" media="screen" />
+    <link rel="stylesheet" href="lib/leaflet-1.0/leaflet.css" type="text/css" media="screen" />
     <style>
       body {
         padding: 0px;
@@ -30,10 +30,12 @@
       
       #options {
       	position: absolute;
+
       	bottom: 0px;
       	right: 0px;
       	background-color: rgba(255, 255, 255, 0.7);
       	border: solid 1px #c0c0c0;
+          z-index: 10000;
       }
       
       #layers {
@@ -123,7 +125,7 @@
 	</script>
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script type="text/javascript" src="bower_components/underscore/underscore-min.js"></script>
-	<script type="text/javascript" src="bower_components/leaflet/dist/leaflet.js"></script>
+	<script type="text/javascript" src="lib/leaflet-1.0/leaflet-src.js"></script>
 	<script type="text/javascript" src="src/leaflet-tilefilter.js"></script>
 	<script type="text/javascript">
 

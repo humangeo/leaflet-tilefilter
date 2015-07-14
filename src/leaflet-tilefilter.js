@@ -343,7 +343,7 @@ L.CanvasFilter = L.ImageFilter.extend({
     	// manipulate by applying filters
         var canvas;
         var m = L.Browser.retina ? 2 : 1;
-        var size = image._layer.options.tileSize * m; //Math.min(image._layer.options.tileSize * m, 256);
+        var size = image.options.tileSize * m; //Math.min(image._layer.options.tileSize * m, 256);
         var hasContext = true;
         
         if (!ctx) {//image.canvasContext) {
@@ -366,8 +366,8 @@ L.CanvasFilter = L.ImageFilter.extend({
             if (!hasContext) {
 	            image.onload = null;
 	            image.removeAttribute("crossorigin");
-	            if (element._layer.options.canvasFilter) {
-	                element._layer.options.canvasFilter.call(image, ctx);
+	            if (element.options.canvasFilter) {
+	                element.options.canvasFilter.call(image, ctx);
 	            } else {
 	                image.src = canvas.toDataURL();
 	            }
@@ -878,7 +878,7 @@ L.CSSFilter = L.ImageFilter.extend({
     statics: {
         prefixes: [ "-webkit-", "-moz-", "-ms-", "-o-", "" ]
     },
-    render: function(image) {
+    render: function(image, ctx) {
         for (var i = 0; i < L.CSSFilter.prefixes.length; ++i) {
             image.style.cssText += " " + L.CSSFilter.prefixes[i] + "filter: " + this.options.filters.join(" ") + ";";
         }
@@ -919,7 +919,7 @@ L.ImageFilters.GenerateCSSFilter = function(filters) {
     return function(image, ctx) {
         return new L.CSSFilter({
             filters: filters
-        }).render(this);
+        }).render(this, image, ctx);
     };
 };
 
@@ -1090,37 +1090,41 @@ L.ImageFilterFunctions = {
     __tileOnLoad: L.TileLayer.prototype._tileOnLoad,
     setFilter: function(filter) {
         this.options.filter = filter;
+        /*
         for (var key in this._tiles) {
             var xyParts = key.split(':');
             var tilePoint = new L.Point(Number(xyParts[0]), Number(xyParts[1]));
-
-            this._loadTile(this._tiles[key], tilePoint);
+            tilePoint.z = Number(xyParts[2]);
+            this._tileReady(tilePoint, null, this._tiles[key]);
         }
+        this._update();
+        */
+        this.redraw();
         return this;
     },
     clearFilter: function() {
         this.options.filter = null;
         return this.redraw();
     },
-    _tileOnLoad: function() {
-        var filter = this._layer.options.filter;
+    _tileOnLoad: function(done, tile) {
+        var filter = this.options.filter;
+        tile.options = this.options;
         if (filter) {
-            filter.call(this, this);
+            filter.call(this, tile);
         }
-        this._layer.__tileOnLoad.call(this);
-    },
-    _loadTile: function(tile, tilePoint) {
-        tile.setAttribute("crossorigin", "anonymous");
-        this.__loadTile.call(this, tile, tilePoint);
+        this.__tileOnLoad.call(this, done, tile);
     }
 };
 
 L.TileLayer.include(L.ImageFilterFunctions);
+L.TileLayer.addInitHook(function () {
+    this.options.crossOrigin = true;
+});
 
 /**
  * Displays TMS tile images using canvas rather than image elements
  */
-L.TileLayer.CanvasTMS = L.TileLayer.Canvas.extend({
+L.TileLayer.CanvasTMS = L.TileLayer.extend({
 	options: {
 		tileSize: 256,
         reuseTiles: true
@@ -1128,56 +1132,64 @@ L.TileLayer.CanvasTMS = L.TileLayer.Canvas.extend({
 	initialize: function (url, options) {
 		L.TileLayer.prototype.initialize.call(this, url, options);
 	},
-	_tileOnLoad: function () {
-		this._layer.__tileOnLoad.call(this);
-	},
-    _applyFilter: function (tile, img, ctx) {
-        setTimeout(this._async(tile, img, ctx), 0);
+    _applyFilter: function (tile, img, ctx, done) {
+        setTimeout(this._async(tile, img, ctx, done), 0);
     },
-    _async: function (tile, img, ctx) {
+    _async: function (tile, img, ctx, done) {
+        var me = this;
         return function () {
             try {
-                var filter = tile._layer.options.filter || function (data) {
+                var filter = tile.options.filter || function (data) {
                     return data;
                 };
 
-                img._layer = tile._layer;
+                img._layer = tile;
                 filter.call(tile, img, ctx);
             }
             finally {
-                tile._layer.tileDrawn(tile);
+                done();
+                //me._tileOnLoad.call(me, L.bind(me._tileReady, me, coords, null, tile), tile);
             }
         };
     },
-	_loadTile: function (tile, tilePoint) {
+    createTile: function (coords, done) {
+        var tile = L.DomUtil.create('canvas', 'leaflet-tile');
+        tile.width = tile.height = this.options.tileSize;
+        tile.onselectstart = tile.onmousemove = L.Util.falseFn;
+
         var me = this;
 
-		tile._layer  = this;
+        tile.options = this.options;
+        tile._layer  = this;
 
-		this._adjustTilePoint(tilePoint);
-		
-		var ctx = tile.getContext('2d');
-		var scale = 1;
+        //this._adjustTilePoint(tilePoint);
 
-		if (L.Browser.retina && this.options.detectRetina) {
-			scale = 2;
-			tile.width = tile.height = tile._layer.options.tileSize * scale;
-			tile.style.width = tile.style.height = tile._layer.options.tileSize + 'px';
-		}
+        var ctx = tile.getContext('2d');
+        var scale = 1;
+
+        if (L.Browser.retina && this.options.detectRetina) {
+            scale = 2;
+            tile.width = tile.height = tile.options.tileSize * scale;
+            tile.style.width = tile.style.height = tile.options.tileSize + 'px';
+        }
 
         if (!tile._img) {
             var img = new Image();
 
             img.onload = function () {
                 tile._img = img;
-                me._applyFilter(tile, img, ctx);
+                tile._img.options = me.options;
+                me._applyFilter(tile, img, ctx, done);
             };
 
             img.crossOrigin = 'anonymous';
-            img.src = me.getTileUrl(tilePoint);
+            img.src = me.getTileUrl(coords);
         }
         else {
-            me._applyFilter(tile, tile._img, ctx);
+            tile._img.options = me.options;
+            me._applyFilter(tile, tile._img, ctx, done);
         }
-	}
+
+        return tile;
+    }
 });
