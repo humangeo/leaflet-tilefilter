@@ -132,7 +132,7 @@
 $(document).ready(function() {
 	var map;
 	var legendControl;
-	var classFunc = L.TileLayer.CanvasTMS;
+	var classFunc = L.TileLayer;
 	
 	// Function for resizing the map to fill the available space on the screen
 	var resize = function () {
@@ -280,11 +280,11 @@ $(document).ready(function() {
 
 	var getFilter = function () {
 			
-        selectedFilter = function (image, ctx) {
+        selectedFilter = function (element, image, ctx) {
             return new L.CombinedFilter({
                 cssFilter: selectedCSSFilter,
                 canvasFilter: selectedChannelFilter
-            }).render(this, image, ctx);
+            }).render(element, image, ctx);
         };
 
 		baseLayer.setFilter(selectedFilter);

@@ -330,7 +330,7 @@ L.ImageFilter = L.Class.extend({
     initialize: function(options) {
         L.Util.setOptions(this, options);
     },
-    render: function(image) {
+    render: function(element, image, ctx) {
         return this;
     }
 });
@@ -366,8 +366,8 @@ L.CanvasFilter = L.ImageFilter.extend({
             if (!hasContext) {
 	            image.onload = null;
 	            image.removeAttribute("crossorigin");
-	            if (element.options.canvasFilter) {
-	                element.options.canvasFilter.call(image, ctx);
+	            if (image.options.canvasFilter) {
+	                image.options.canvasFilter.call(this, image, ctx);
 	            } else {
 	                image.src = canvas.toDataURL();
 	            }
@@ -649,7 +649,7 @@ L.ChannelFilters.Matrix = L.ChannelFilter.extend({
     options: {
         matrix: [ 0.393, 0.769, 0.189, 0.349, 0.686, 0.168, 0.272, 0.534, 0.131 ]
     },
-    initialize: function () {
+    initialize: function (options) {
         L.ChannelFilter.prototype.initialize.call(this, options);
     },
     updateChannels: function(channels) {
@@ -878,9 +878,9 @@ L.CSSFilter = L.ImageFilter.extend({
     statics: {
         prefixes: [ "-webkit-", "-moz-", "-ms-", "-o-", "" ]
     },
-    render: function(image, ctx) {
+    render: function(element, image, ctx) {
         for (var i = 0; i < L.CSSFilter.prefixes.length; ++i) {
-            image.style.cssText += " " + L.CSSFilter.prefixes[i] + "filter: " + this.options.filters.join(" ") + ";";
+            element.style.cssText += " " + L.CSSFilter.prefixes[i] + "filter: " + this.options.filters.join(" ") + ";";
         }
     }
 });
@@ -896,13 +896,13 @@ L.CombinedFilter = L.ImageFilter.extend({
     },
     renderCanvas: function (element, image, ctx) {
     	if (this.options.canvasFilter) {
-    		this.options.canvasFilter.call(element, image, ctx);
+    		this.options.canvasFilter.call(element, element, image, ctx);
     	}
     	return this;
     },
     renderCSS: function (element, image, ctx) {
     	if (this.options.cssFilter) {
-            this.options.cssFilter.call(element, image, ctx);
+            this.options.cssFilter.call(element, element, image, ctx);
         }
     	return this;
     },
@@ -916,15 +916,15 @@ L.CombinedFilter = L.ImageFilter.extend({
 L.ImageFilters = {};
 
 L.ImageFilters.GenerateCSSFilter = function(filters) {
-    return function(image, ctx) {
+    return function(element, image, ctx) {
         return new L.CSSFilter({
             filters: filters
-        }).render(this, image, ctx);
+        }).render(element, image, ctx);
     };
 };
 
 L.ImageFilters.GenerateChannelFilter = function (filters) {
-	return function (imageData) { 
+	return function (imageData) {
 		return new L.CanvasChannelFilter({
 			filters: filters
 		}).render(imageData);
@@ -932,10 +932,10 @@ L.ImageFilters.GenerateChannelFilter = function (filters) {
 };
 
 L.ImageFilters.GenerateCanvasFilter = function (filters) {
-	return function (image, ctx) {
+	return function (element, image, ctx) {
 		return new L.CanvasFilter({
 			channelFilter: L.ImageFilters.GenerateChannelFilter(filters)
-		}).render(this, image, ctx);
+		}).render(element, image, ctx);
 	};
 };
 
@@ -969,6 +969,7 @@ L.ImageFilters.Presets = {
         Sepia60: L.ImageFilters.GenerateCSSFilter([ "sepia(60%)" ]),
         Sepia40: L.ImageFilters.GenerateCSSFilter([ "sepia(40%)" ]),
         Sepia20: L.ImageFilters.GenerateCSSFilter([ "sepia(20%)" ]),
+        Grayscale: L.ImageFilters.GenerateCSSFilter([ "saturate(0%)" ]),
         Saturate200: L.ImageFilters.GenerateCSSFilter([ "saturate(200%)" ]),
         Saturate300: L.ImageFilters.GenerateCSSFilter([ "saturate(300%)" ]),
         Saturate400: L.ImageFilters.GenerateCSSFilter([ "saturate(400%)" ]),
@@ -1110,7 +1111,7 @@ L.ImageFilterFunctions = {
         var filter = this.options.filter;
         tile.options = this.options;
         if (filter) {
-            filter.call(this, tile);
+            filter.call(this, tile, tile);
         }
         this.__tileOnLoad.call(this, done, tile);
     }
@@ -1144,7 +1145,7 @@ L.TileLayer.CanvasTMS = L.TileLayer.extend({
                 };
 
                 img._layer = tile;
-                filter.call(tile, img, ctx);
+                filter.call(tile, tile, img, ctx);
             }
             finally {
                 done();
