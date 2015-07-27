@@ -132,7 +132,7 @@
 $(document).ready(function() {
 	var map;
 	var legendControl;
-	var classFunc = L.TileLayer;
+	var classFunc = L.TileLayer.CanvasTMS;
 	
 	// Function for resizing the map to fill the available space on the screen
 	var resize = function () {
@@ -266,12 +266,8 @@ $(document).ready(function() {
 	// Store the currently selected filters
 	var selectedCSSFilter = L.ImageFilters.Presets.CSS.None;
 	var selectedChannelFilter = L.ImageFilters.Presets.CanvasChannel.None;
-	var selectedFilter = function () {
-		return new L.CombinedFilter(this, {
-			cssFilter: selectedCSSFilter,
-			canvasFilter: selectedChannelFilter
-		}).render();
-	};
+	var selectedFilter;
+
 	var $layers = $('#layers');
 	var $template = $('#layer-template');
 	var template = _.template($template.html());
@@ -281,13 +277,13 @@ $(document).ready(function() {
 	var getFilter = function () {
 			
         selectedFilter = function (element, image, ctx) {
-            return new L.CombinedFilter({
-                cssFilter: selectedCSSFilter,
-                canvasFilter: selectedChannelFilter
+            new L.CanvasFilter({
+                channelFilter: selectedChannelFilter
             }).render(element, image, ctx);
         };
 
-		baseLayer.setFilter(selectedFilter);
+		baseLayer.setFilter(selectedChannelFilter);
+        baseLayer.setCSSFilter(selectedCSSFilter);
 	};
 	
 	getFilter();
@@ -317,12 +313,7 @@ $(document).ready(function() {
 					var tempLayer = baseLayer;
 				
 					baseLayer = option.getLayer(classFunc);
-					
-					/*
-					if (selectedFilter) {
-						baseLayer.setFilter(selectedFilter);
-					}
-					*/
+
 					getFilter();
 					
 					map.addLayer(baseLayer);
@@ -353,13 +344,13 @@ $(document).ready(function() {
 	$canvasFilters.on('change', function (e) {
 		selectedChannelFilter = L.ImageFilters.Presets.CanvasChannel[$canvasFilters.val()];
 
-		getFilter();
+		baseLayer.setFilter(selectedChannelFilter);
 	});
 	
 	$cssFilters.on('change', function (e) {
 		selectedCSSFilter = L.ImageFilters.Presets.CSS[$cssFilters.val()];
 
-		getFilter();
+		baseLayer.setCSSFilter(selectedCSSFilter);
 	});
 	
 	baseLayer.addTo(map);
