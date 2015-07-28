@@ -1050,12 +1050,12 @@ L.ImageFilters.Presets = {
 			channel: 2,
 			values: [0, 0]
 		})]),
-		Convolve: function (image, ctx) { 
+		Convolve: function (element, image, ctx) {
 			return new L.CanvasFilter({
 				channelFilter: function (imageData, ctx) {
 					return new L.ConvolveFilter({}).render(imageData, ctx);
 				}
-			}).render(this, image, ctx);
+			}).render(element, image, ctx);
 		},
 		Threshold: L.ImageFilters.GenerateCanvasFilter([new L.ChannelFilters.Threshold()]),
 		WaterTransparent: L.ImageFilters.GenerateCanvasFilter([new L.ChannelFilters.ColorSwap({
