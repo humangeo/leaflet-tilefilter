@@ -22,7 +22,7 @@
     "tests"
   ],
   "devDependencies": {
-    "leaflet": "~1.0.0",
+    "leaflet": "~1.0.0-beta1",
     "underscore": "~1.8.3",
     "jquery": "~2.1.4"
   }
