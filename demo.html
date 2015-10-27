@@ -161,9 +161,9 @@ $(document).ready(function() {
 	var layerChoices = {
 		Stamen: {
 			Toner: {
-				thumbnail: 'http://tile.stamen.com/toner/12/655/1583.jpg',
+				thumbnail: 'http://a.tile.stamen.com/toner/12/655/1583.png',
 				getLayer: function (classFunction) {
-					return new classFunction('http://tile.stamen.com/toner/{z}/{x}/{y}.jpg', {
+					return new classFunction('http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {
 						detectRetina: true
 					});
 				}
@@ -171,7 +171,7 @@ $(document).ready(function() {
 			Terrain: {
 				thumbnail: 'http://tile.stamen.com/terrain/12/655/1583.jpg',
 				getLayer: function (classFunction) {
-					return new classFunction('http://tile.stamen.com/terrain/{z}/{x}/{y}.jpg', {
+					return new classFunction('http://{s}.tile.stamen.com/terrain/{z}/{x}/{y}.jpg', {
 						detectRetina: true
 					});
 				}
@@ -179,7 +179,7 @@ $(document).ready(function() {
 			Watercolor: {
 				thumbnail: 'http://tile.stamen.com/watercolor/12/655/1583.jpg',
 				getLayer: function (classFunction) {
-					return new classFunction('http://tile.stamen.com/watercolor/{z}/{x}/{y}.jpg', {
+					return new classFunction('http://{s}.tile.stamen.com/watercolor/{z}/{x}/{y}.jpg', {
 						detectRetina: true
 					});
 				}
@@ -233,8 +233,7 @@ $(document).ready(function() {
 					});
 				}
 			}
-		},
-        Mapbox: {}
+		}
 	};
 
     var styles = ['streets', 'light', 'dark', 'satellite', 'streets-satellite', 'wheatpaste', 'streets-basic', 'comic', 'outdoors', 'run-bike-hike', 'pencil', 'pirates', 'emerald', 'high-contrast'];
@@ -247,20 +246,6 @@ $(document).ready(function() {
         }
     };
 
-    for (var i = 0; i < styles.length; ++i) {
-        var styleName = styles[i];
-        var parts = styleName.split('-');
-
-        var name = _.map(parts, function (part) {
-            return part[0].toUpperCase() + part.substring(1);
-        }).join(' ');
-
-        layerChoices.Mapbox[name] = {
-            thumbnail: 'https://a.tiles.mapbox.com/v4/mapbox.' + styleName + '/12/655/1583.png?access_token=' + apiKey,
-            getLayer: createFunc(styleName)
-        };
-    }
-	
 	// Store the currently selected filters
 	var selectedCSSFilter = L.ImageFilters.Presets.CSS.None;
 	var selectedChannelFilter = L.ImageFilters.Presets.CanvasChannel.None;
