@@ -47,4 +47,4 @@ http://humangeo.github.io/leaflet-tilefilter/demo.html
 
 ## Details
 
-Read the [docs](https://github.com/humangeo/leaflet-tilefilter/wiki).
+Read the [docs](https://github.com/humangeo/leaflet-tilefilter/wiki).  Checkout the 1.0dev branch for Leaflet 1.x support.
