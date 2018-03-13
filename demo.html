@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Leaflet Tile Filter Demo">
     <meta name="author" content="Scott Fairgrieve, HumanGeo">
-    <link rel="stylesheet" href="lib/leaflet-1.0/leaflet.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css" />
     <style>
       body {
         padding: 0px;
@@ -125,7 +125,7 @@
 	</script>
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script type="text/javascript" src="bower_components/underscore/underscore-min.js"></script>
-	<script type="text/javascript" src="lib/leaflet-1.0/leaflet-src.js"></script>
+	<script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
 	<script type="text/javascript" src="src/leaflet-tilefilter.js"></script>
 	<script type="text/javascript">
 
@@ -187,25 +187,6 @@ $(document).ready(function() {
 				}
 			}
 		},
-		MapQuest: {
-			OSM: {
-				thumbnail: 'http://otile1.mqcdn.com/tiles/1.0.0/map/12/655/1583.jpg',
-				getLayer: function (classFunction) {
-					return new classFunction('http://otile1.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg', {
-						detectRetina: true
-					});
-				},
-				selected: true
-			},
-			Aerial: {
-				thumbnail: 'http://otile1.mqcdn.com/tiles/1.0.0/sat/12/655/1583.jpg',
-				getLayer: function (classFunction) {
-					return new classFunction('http://otile1.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg', {
-						detectRetina: true
-					});
-				}
-			}
-		},
 		OSM: {
 			Default: {
 				thumbnail: 'http://a.tile.openstreetmap.org/12/655/1583.png',
@@ -257,7 +238,7 @@ $(document).ready(function() {
 	var $template = $('#layer-template');
 	var template = _.template($template.html());
 
-	var baseLayer = layerChoices.MapQuest.OSM.getLayer(classFunc);
+	var baseLayer = layerChoices.Stamen.Watercolor.getLayer(classFunc);
 
 	var getFilter = function () {
 			
