@@ -898,7 +898,7 @@ L.CSSFilter = L.ImageFilter.extend({
         prefixes: [ "-webkit-", "-moz-", "-ms-", "-o-", "" ]
     },
     render: function(element, image, ctx) {
-		if (element) {
+		if (element && element.style) {
 	        for (var i = 0, len = L.CSSFilter.prefixes.length; i < len; ++i) {
 				element.style.cssText = element.style.cssText || "";
 	            element.style.cssText += " " + L.CSSFilter.prefixes[i] + "filter: " + this.options.filters.join(" ") + ";";
