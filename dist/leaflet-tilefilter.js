@@ -1166,6 +1166,10 @@ L.ImageFilterFunctions = {
 L.TileLayer.include(L.ImageFilterFunctions);
 L.TileLayer.addInitHook(function () {
     this.options.crossOrigin = true;
+	
+	if (this.options.cssFilter) {
+		this._cssChanged = true;
+	}
 });
 
 /**
